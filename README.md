@@ -65,3 +65,51 @@ dotnet publish -c Release
 ```
 
 Standalone repository: no project references to other Platform Auth components.
+
+## Deploy to Render (free tier — learning / demo)
+
+Free Web Services **sleep**, **cold start**, and have **limited resources**. Demo only.
+
+**Deploy second** (after signup, before gateway).
+
+### Render Web Service
+
+| Setting | Value |
+|---------|--------|
+| Environment | Docker |
+| Dockerfile | `./Dockerfile` |
+| Health check | `/health` |
+| Plan | Free |
+
+### Environment variables (Render dashboard)
+
+| Key | Sensitive | Notes |
+|-----|-----------|--------|
+| `FunctionInvocation__ApiKey` | Yes | Same secret as gateway and signup |
+| `AllowedHosts__0` | No | `<your-login-service>.onrender.com` |
+| `ASPNETCORE_ENVIRONMENT` | No | `Production` |
+
+Public URL on free tier; **`X-Internal-Api-Key`** required on `POST /login`.
+
+Render injects **`PORT`**; binding uses `Hosting/ContainerPortBinding.cs`.
+
+### Docker (local)
+
+```bash
+docker build -t platform-auth-login .
+docker run --rm -p 8080:8080 -e PORT=8080 \
+  -e FunctionInvocation__ApiKey="<your-local-internal-api-key>" \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  platform-auth-login
+curl http://localhost:8080/health
+```
+
+### GitHub → Render
+
+Connect repo in Render or use deploy hook secret with `.github/workflows/render-deploy.yml`. CI: `.github/workflows/ci.yml`.
+
+### Verify
+
+```bash
+curl -fsS "https://<your-login-host>/health"
+```
