@@ -40,6 +40,7 @@ Listens on **`https://localhost:5002`**. HTTP is not enabled in the default laun
 
 ```text
 FunctionInvocation__ApiKey=<secret>
+AllowedHosts__0=<your-public-hostname>
 ASPNETCORE_ENVIRONMENT=Production
 ```
 
