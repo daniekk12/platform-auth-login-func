@@ -1,6 +1,10 @@
 # platform-auth-login-func
 
-Independent **Login Function** for the Platform Auth learning project. Business logic lives in `LoginFunction`, which implements `IFunction<LoginRequest, LoginResponse>`. HTTP (`POST /login`) is a **local invocation adapter** only.
+Independent **Login Function** for the Platform Auth learning project. Business logic lives in `LoginFunction`, which implements `IFunction<LoginRequest, LoginResponse>`. HTTP (`POST /login`) is a **local invocation adapter** for the gateway (or a future Function Host)—**not** a public client API.
+
+## Client access
+
+**End users and frontends must not call this service directly.** Use the gateway at `http://localhost:5000/auth/login`. Direct `POST /login` without the internal invocation header returns **403 Forbidden**.
 
 ## What it does
 
@@ -44,10 +48,12 @@ Listens on **http://localhost:5002** (see `Properties/launchSettings.json`).
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/login` | Invoke login function |
+| POST | `/login` | Gateway-internal invoke (requires `X-Platform-Auth-Internal-Key`) |
 | GET | `/health` | Process liveness |
 
-### Request (`POST /login`)
+Configure `FunctionInvocation:ApiKey` (same shared secret as the gateway). Development default is in `appsettings.Development.json`.
+
+### Request (`POST /login`, gateway only)
 
 ```json
 {
@@ -68,14 +74,6 @@ Listens on **http://localhost:5002** (see `Properties/launchSettings.json`).
 ### Validation error (`400 Bad Request`)
 
 Validation problem details; passwords and secrets are never returned.
-
-Example:
-
-```bash
-curl -X POST http://localhost:5002/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"
-```
 
 ## Tests
 
