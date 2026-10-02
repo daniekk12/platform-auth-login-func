@@ -8,6 +8,8 @@ builder.Services.AddSingleton<LoginFunction>();
 builder.Services.AddSingleton<IFunction<LoginRequest, LoginResponse>>(sp =>
     sp.GetRequiredService<LoginFunction>());
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 app.MapPost("/login", async (
@@ -18,5 +20,7 @@ app.MapPost("/login", async (
     var response = await loginFunction.ExecuteAsync(request, cancellationToken);
     return Results.Ok(response);
 });
+
+app.MapHealthChecks("/health");
 
 app.Run();

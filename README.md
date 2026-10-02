@@ -37,10 +37,11 @@ C# types: `LoginRequest`, `LoginResponse` in `Contracts/`.
 dotnet run --launch-profile http
 ```
 
-**Local HTTP adapter:** `POST http://localhost:5002/`
+**Local HTTP adapter:** `POST http://localhost:5002/login`  
+**Liveness:** `GET http://localhost:5002/health`
 
 ```bash
-curl -X POST http://localhost:5002/ -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"
+curl -X POST http://localhost:5002/login -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"
 ```
 
 ## Build
