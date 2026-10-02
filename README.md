@@ -1,79 +1,55 @@
 # platform-auth-login-func
 
-Independent **Login Function** for the Platform Auth learning project. Business logic lives in `LoginFunction`, which implements `IFunction<LoginRequest, LoginResponse>`. HTTP (`POST /login`) is a **local invocation adapter** for the gateway (or a future Function Host)—**not** a public client API.
+Independent **Login Function** for Platform Auth. HTTP (`POST /login`) is an **internal invocation adapter** for the gateway only—not a public client API.
 
 ## Client access
 
-**End users and frontends must not call this service directly.** Use the gateway at `http://localhost:5000/auth/login`. Direct `POST /login` without the internal invocation header returns **403 Forbidden**.
+**End users and frontends must not call this service directly.** Use the gateway. Direct `POST /login` without **`X-Internal-Api-Key`** returns **403 Forbidden**.
 
-## What it does
+## Configuration
 
-- Validates login input (email format, required fields).
-- Executes login function logic without database, JWT, sessions, or password verification.
-- Returns a non-sensitive success payload demonstrating the function ran.
+### Required
 
-## Architecture
+| Purpose | Environment variable | Nested key |
+|---------|---------------------|------------|
+| Internal API key | `FunctionInvocation__ApiKey` | `FunctionInvocation:ApiKey` |
+
+Startup fails if the API key is missing or empty.
+
+### Optional
+
+| Purpose | Default |
+|---------|---------|
+| Logging levels | Information (see `appsettings.json`) |
+
+### Secrets
+
+- **`FunctionInvocation:ApiKey`** — shared secret with the gateway. Never commit or log.
+
+### Local development
+
+```bash
+dotnet user-secrets set "FunctionInvocation:ApiKey" "<your-local-internal-api-key>"
+dotnet dev-certs https --trust
+dotnet run --launch-profile https
+```
+
+Listens on **`https://localhost:5002`**. HTTP is not enabled in the default launch profile.
+
+### Production
 
 ```text
-HTTP Request (POST /login)
-        |
-        v
-  HTTP Adapter (Http/LoginHttpAdapter)
-        |
-        v
-  LoginFunction (Functions/LoginFunction)
-        |
-        v
-  LoginResponse
+FunctionInvocation__ApiKey=<secret>
+AllowedHosts__0=<your-public-hostname>
+ASPNETCORE_ENVIRONMENT=Production
 ```
-
-Signup and Login do not reference each other. A future Function Host will invoke `LoginFunction` without HTTP-specific business logic.
-
-## Install
-
-```bash
-dotnet restore
-dotnet build
-```
-
-## Run locally
-
-```bash
-dotnet run --launch-profile http
-```
-
-Listens on **http://localhost:5002** (see `Properties/launchSettings.json`).
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/login` | Gateway-internal invoke (requires `X-Platform-Auth-Internal-Key`) |
-| GET | `/health` | Process liveness |
-
-Configure `FunctionInvocation:ApiKey` (same shared secret as the gateway). Development default is in `appsettings.Development.json`.
-
-### Request (`POST /login`, gateway only)
-
-```json
-{
-  "email": "test@example.com",
-  "password": "Password123!"
-}
-```
-
-### Success response (`200 OK`)
-
-```json
-{
-  "message": "Login function executed",
-  "email": "test@example.com"
-}
-```
-
-### Validation error (`400 Bad Request`)
-
-Validation problem details; passwords and secrets are never returned.
+| POST | `/login` | Internal invoke (requires `X-Internal-Api-Key`) |
+| GET | `/health` | Liveness (no API key required) |
 
 ## Tests
 
@@ -81,6 +57,11 @@ Validation problem details; passwords and secrets are never returned.
 dotnet test tests/Platform.Auth.Login.Func.Tests/Platform.Auth.Login.Func.Tests.csproj
 ```
 
-Tests target `LoginFunction` behavior (validation, cancellation), not only HTTP.
+## Build & publish
 
-Standalone repository: no `.sln`, no project references to other Platform Auth components.
+```bash
+dotnet build
+dotnet publish -c Release
+```
+
+Standalone repository: no project references to other Platform Auth components.
