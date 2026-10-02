@@ -1,18 +1,53 @@
 # platform-auth-login-func
 
-Independent **Login Function** for the Platform Auth learning project. Business logic lives in `LoginFunction` (`IFunction<LoginRequest, LoginResponse>`). HTTP is a **local invocation adapter**, not the definition of the function.
+Independent **Login Function** for the Platform Auth learning project. Business logic lives in `LoginFunction`, which implements `IFunction<LoginRequest, LoginResponse>`. HTTP (`POST /login`) is a **local invocation adapter** only.
 
-## Architecture role
+## What it does
+
+- Validates login input (email format, required fields).
+- Executes login function logic without database, JWT, sessions, or password verification.
+- Returns a non-sensitive success payload demonstrating the function ran.
+
+## Architecture
 
 ```text
-Gateway API  --->  (future Function Host)  --->  Login Function
+HTTP Request (POST /login)
+        |
+        v
+  HTTP Adapter (Http/LoginHttpAdapter)
+        |
+        v
+  LoginFunction (Functions/LoginFunction)
+        |
+        v
+  LoginResponse
 ```
 
-Signup and Login do not reference each other.
+Signup and Login do not reference each other. A future Function Host will invoke `LoginFunction` without HTTP-specific business logic.
 
-## Function contract
+## Install
 
-**Input**
+```bash
+dotnet restore
+dotnet build
+```
+
+## Run locally
+
+```bash
+dotnet run --launch-profile http
+```
+
+Listens on **http://localhost:5002** (see `Properties/launchSettings.json`).
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/login` | Invoke login function |
+| GET | `/health` | Process liveness |
+
+### Request (`POST /login`)
 
 ```json
 {
@@ -21,33 +56,33 @@ Signup and Login do not reference each other.
 }
 ```
 
-**Output**
+### Success response (`200 OK`)
 
 ```json
 {
-  "message": "Login function executed"
+  "message": "Login function executed",
+  "email": "test@example.com"
 }
 ```
 
-C# types: `LoginRequest`, `LoginResponse` in `Contracts/`.
+### Validation error (`400 Bad Request`)
 
-## Run locally
+Validation problem details; passwords and secrets are never returned.
 
-```bash
-dotnet run --launch-profile http
-```
-
-**Local HTTP adapter:** `POST http://localhost:5002/login`  
-**Liveness:** `GET http://localhost:5002/health`
+Example:
 
 ```bash
-curl -X POST http://localhost:5002/login -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"
+curl -X POST http://localhost:5002/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"
 ```
 
-## Build
+## Tests
 
 ```bash
-dotnet build
+dotnet test tests/Platform.Auth.Login.Func.Tests/Platform.Auth.Login.Func.Tests.csproj
 ```
 
-Standalone repository: no `.sln`, no references to other Platform Auth projects.
+Tests target `LoginFunction` behavior (validation, cancellation), not only HTTP.
+
+Standalone repository: no `.sln`, no project references to other Platform Auth components.
