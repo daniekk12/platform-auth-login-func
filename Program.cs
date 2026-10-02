@@ -12,6 +12,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+app.UseMiddleware<InternalInvocationMiddleware>();
+
 app.MapLoginHttpAdapter();
 app.MapHealthChecks("/health");
 
